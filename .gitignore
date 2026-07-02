@@ -18,6 +18,9 @@ Thumbs.db
 .idea/
 .vscode/
 
+# Accidental nested clone
+ml-nids-evaluation-environment/
+
 # Datasets and generated artifacts
 data/raw/*
 !data/raw/.gitkeep

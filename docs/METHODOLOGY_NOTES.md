@@ -4,6 +4,8 @@
 
 The dataset is split into training and test partitions. Preprocessing is fitted only on the training partition and then applied to the test partition.
 
+For CIC-IDS2017 row-limited runs, `max_rows` is applied as per-file sampling across the available day CSV files before concatenation and shuffling. This helps preserve attack-category coverage when attacks are distributed across different collection days.
+
 ## Cross-Dataset Evaluation
 
 One dataset is used for training and another for testing. Feature alignment uses two strategies: strict normalized-name intersection and a manual mapping of common flow-level features such as duration, packet counts, byte counts, packet size means, and packet rate.

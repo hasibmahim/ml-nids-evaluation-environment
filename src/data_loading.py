@@ -57,6 +57,41 @@ def _read_csv_folder(folder: str | Path, max_rows: int | None = None) -> pd.Data
     return pd.concat(frames, ignore_index=True)
 
 
+def _read_cicids2017_folder(
+    folder: str | Path,
+    max_rows: int | None = None,
+    random_state: int = 42,
+) -> pd.DataFrame:
+    """Read CIC-IDS2017 files with balanced per-file sampling when limited."""
+    files = find_files(folder, "*.csv")
+    if not files:
+        raise FileNotFoundError(
+            f"No CSV files found in {folder}. Place raw dataset CSV files there or use --sample."
+        )
+
+    if max_rows is None or len(files) == 1:
+        return _read_csv_folder(folder, max_rows=max_rows)
+
+    base_quota = max_rows // len(files)
+    remainder = max_rows % len(files)
+    frames: list[pd.DataFrame] = []
+    for index, file_path in enumerate(files):
+        quota = base_quota + (1 if index < remainder else 0)
+        if quota <= 0:
+            continue
+
+        frame = pd.read_csv(file_path, low_memory=False)
+        if len(frame) > quota:
+            # CIC-IDS2017 attack categories are distributed across day files, so
+            # max_rows must sample from each file instead of taking early files only.
+            frame = frame.sample(n=quota, random_state=random_state + index)
+        frames.append(frame)
+
+    if not frames:
+        raise ValueError(f"No rows loaded from {folder}")
+    return pd.concat(frames, ignore_index=True).sample(frac=1, random_state=random_state).reset_index(drop=True)
+
+
 def _normalize_frame_columns(df: pd.DataFrame) -> pd.DataFrame:
     normalized = df.copy()
     normalized.columns = [normalize_column_name(column) for column in normalized.columns]
@@ -110,9 +145,13 @@ def _drop_non_feature_columns(df: pd.DataFrame) -> pd.DataFrame:
     return df[feature_columns + keep].copy()
 
 
-def load_cicids2017(path: str | Path, max_rows: int | None = None) -> pd.DataFrame:
+def load_cicids2017(
+    path: str | Path,
+    max_rows: int | None = None,
+    random_state: int = 42,
+) -> pd.DataFrame:
     """Load CIC-IDS2017 CSV files from a folder."""
-    raw = _read_csv_folder(path, max_rows=max_rows)
+    raw = _read_cicids2017_folder(path, max_rows=max_rows, random_state=random_state)
     prepared = _prepare_common_columns(
         raw,
         label_candidates=["label", "labels", "class"],
@@ -147,7 +186,7 @@ def load_dataset(
 
     base = Path(raw_root)
     if name == "cicids2017":
-        return load_cicids2017(base / "cicids2017", max_rows=max_rows)
+        return load_cicids2017(base / "cicids2017", max_rows=max_rows, random_state=random_state)
     if name == "unsw_nb15":
         return load_unsw_nb15(base / "unsw_nb15", max_rows=max_rows)
     raise ValueError(f"Unsupported dataset: {dataset_name}")

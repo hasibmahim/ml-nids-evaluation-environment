@@ -10,6 +10,8 @@ data/raw/cicids2017/
 
 The loader looks for a label column such as `Label`, normalizes column names, creates `target`, and derives `attack_category`.
 
+When `max_rows` is used with multiple CIC-IDS2017 CSV files, the loader samples approximately `max_rows / number_of_files` rows from each file before combining and shuffling. This avoids accidentally keeping only early day files and losing attack categories that appear in later files.
+
 ## UNSW-NB15
 
 Raw UNSW-NB15 files are not included. Place CSV files in:
