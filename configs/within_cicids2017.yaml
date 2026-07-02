@@ -1,0 +1,13 @@
+experiment_name: within_cicids2017
+experiment_type: within_dataset
+train_dataset: cicids2017
+test_dataset: cicids2017
+target_mode: binary
+models:
+  - logistic_regression
+  - random_forest
+  - xgboost
+  - isolation_forest
+max_rows: 50000
+random_state: 42
+output_dir: results
